@@ -1,1 +1,4 @@
 Set Img-baud-rate -> Set "Baseline" -> Init Cams -> Take Photo per cam -> Do Math -> Generate Distance Map -> Use rgb values + april tags to anchor points for mapping -> Create SLAM
+
+Math: Rectify Imgs, Grayscale, Find Similarities Along Horizontal, Calculate pixel disparity, Use Z = (Focal * Baseline)/disparity to find depth.
+ Use OpenCV to Rectify  
