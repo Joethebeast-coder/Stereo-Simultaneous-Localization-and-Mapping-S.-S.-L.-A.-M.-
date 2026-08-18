@@ -1,25 +1,25 @@
 import cv2
 import numpy as np
 
-# Number of INNER corners in the checkerboard
+#Number of INNER corners in the checkerboard
 CHECKERBOARD = (9, 6)
 
-# Size of one square, in meters
+#Size of one square, in meters
 SQUARE_SIZE = 0.025
 
-# Create an array for 9*6 = 54 corners
+#Create an array for 9*6 = 54 corners
 objp = np.zeros(
     (CHECKERBOARD[0] * CHECKERBOARD[1], 3),
     np.float32
 )
 
-# Fill in X and Y coordinates
+#Fill in X and Y coordinates
 objp[:, :2] = np.mgrid[
     0:CHECKERBOARD[0],
     0:CHECKERBOARD[1]
 ].T.reshape(-1, 2)
 
-# Convert from "squares" to meters
+#Convert from "squares" to meters
 objp *= SQUARE_SIZE
 
 left_image_points = []
@@ -129,7 +129,7 @@ def rectify(left_image, right_image, map_left_x, map_left_y, map_right_x, map_ri
 
     return rectified_left, rectified_right
 
-def disparity(rectified_left, rectified_right, Q):
+def depth_disparity(rectified_left, rectified_right, Q):
     left_gray = cv2.cvtColor(
         rectified_left,
         cv2.COLOR_BGR2GRAY
