@@ -77,3 +77,53 @@ def calibrate(left_image, right_image):
             image_size,
             flags=flags
         )
+
+    R_left, R_right, P_left, P_right, Q, roi_left, roi_right = \
+        cv2.stereoRectify(
+            K_left,
+            D_left,
+            K_right,
+            D_right,
+            image_size,
+            R,
+            T
+        )
+
+    map_left_x, map_left_y = cv2.initUndistortRectifyMap(
+        K_left,
+        D_left,
+        R_left,
+        P_left,
+        image_size,
+        cv2.CV_32FC1
+    )
+
+    map_right_x, map_right_y = cv2.initUndistortRectifyMap(
+        K_right,
+        D_right,
+        R_right,
+        P_right,
+        image_size,
+        cv2.CV_32FC1
+    )
+
+    
+    return map_left_x, map_left_y, map_right_x, map_right_y
+
+
+def rectify(left_image, right_image, map_left_x, map_left_y, map_right_x, map_right_y):
+    rectified_left = cv2.remap(
+        left_image,
+        map_left_x,
+        map_left_y,
+        cv2.INTER_LINEAR
+    )
+
+    rectified_right = cv2.remap(
+        right_image,
+        map_right_x,
+        map_right_y,
+        cv2.INTER_LINEAR
+    )
+
+    return rectified_left, rectified_right
