@@ -1,10 +1,10 @@
 #include <pybind11/embed.h>
 
-namespace py = pybind11
+namespace py = pybind11;
 PSSI_HandleTypeDef hpssi;
 
-float field_width_m = (316.64 * 2.54) / 100
-float field_length_m = (650.12 * 2.54) / 100
+float field_width_m = (316.64 * 2.54) / 100;
+float field_length_m = (650.12 * 2.54) / 100;
 
 
 void setupPSSI()
@@ -20,12 +20,28 @@ void setupPSSI()
 }
 
 void calibrate_cams(){
+    py::scoped_interpreter guard{};
+
+    int left_image = 0;
+    int right_image = 1;
+    
     py::module_ CC = py::module_::import("Calc_coords");
     py::tuple calibration =
         CC.attr("calibrate")(
             left_image,
             right_image
         );
+
+    //Save Calibration Settings
+    py::array map_left_x = calibration[0].cast<py::array>();
+
+    py::array map_left_y = calibration[1].cast<py::array>();
+
+    py::array map_right_x = calibration[2].cast<py::array>();
+
+    py::array map_right_y = calibration[3].cast<py::array>();
+
+    py::array Q = calibration[4].cast<py::array>();
 
     CC.attr("save_calibration")(
         "calibration.npz",
@@ -36,27 +52,22 @@ void calibrate_cams(){
         Q
     );
 
-    py::array map_left_x = calibration[0].cast<py::array>();
-
-    py::array map_left_y = calibration[1].cast<py::array>();
-
-    py::array map_right_x = calibration[2].cast<py::array>();
-
-    py::array map_right_y = calibration[3].cast<py::array>();
-
-    py::array Q = calibration[4].cast<py::array>();
     
 }
 
-uint8_t frameBuffer[WIDTH * HEIGHT];
 
-HAL_PSSI_Receive_DMA(
-    &hpssi,
-    frameBuffer,
-    sizeof(frameBuffer)
-);
+int main() {
+    uint8_t frameBuffer[WIDTH * HEIGHT];
+    setupPSSI();
 
-void main() {
+    HAL_PSSI_Receive_DMA(
+        &hpssi,
+        frameBuffer,
+        sizeof(frameBuffer)
+    );
+
+    py::scoped_interpreter guard{};
+
     py::module_ CC = py::module_::import("Calc_coords");
     py::module_ SSLAM = py::module_::import("SSLAM");
 
@@ -70,8 +81,6 @@ void main() {
     py::array map_right_x = calibration[2].cast<py::array>();
     py::array map_right_y = calibration[3].cast<py::array>();
     py::array Q = calibration[4].cast<py::array>();
-
-    py::scoped_interpreter guard{};
     
     
     
@@ -102,7 +111,7 @@ void main() {
     py::array valid = disparity[2].cast<py::array>();
     */
     
-    py::tuple scanned_img = SSLAM.attr("collect_n_scan")(left_img, right_img);
+    py::tuple scanned_img = SSLAM.attr("collect_n_scan")(left_img, right_img, map_left_x, map_left_y, map_right_x, map_right_y);
     
     py::array rectified_left = scanned_img[0].cast<py::array>();
     py::array rectified_right = scanned_img[1].cast<py::array>();
@@ -113,29 +122,27 @@ void main() {
         rectified_right,
         full_pack,
         Q
-    )
+    );
 
     py::list obj_dist = obj_dist_plot[0].cast<py::list>();
     py::array points_3d = obj_dist_plot[1].cast<py::array>();
     py::array valid = obj_dist_plot[2].cast<py::array>();
 
-    py::list april_tags = SSLAM.attr("apriltag_pos")(rectified_left, rectified_right, Q);
+    py::list april_tags = SSLAM.attr("apriltag_pos")(rectified_left, valid, points_3d);
 
-    if (april_tags[0].is_none()) {
-        continue;
-    } elif (april_tags.size() < 2) {
-        int tag_id = april_tags[0][0];
-        float horizontal_dist = april_tags[0][1];
-        float robot_angle_to_tag = april_tags[0][2];
+    if (!april_tags[0].is_none()) {
+        int tag_id = april_tags[0][0].cast<int>();
+        float horizontal_dist = april_tags[0][1].cast<float>();
+        float robot_angle_to_tag = april_tags[0][2].cast<float>();
 
-        py::list robot_pos = SSLAM.attr("robot_field_pos")(horizontal_dist, tag_id, robot_angle_to_tag);
+        py::list robot_pos = SSLAM.attr("robot_field_pos")(horizontal_dist, tag_id, robot_angle_to_tag).cast<py::list>();
 
     }
 
     //Have it control motors
         //Defense Mode
         //Use Custom Swerve Drive Lib
-        //Use SSLAM to compute distances from landmarks (Apriltags etc.)
+        //Use SSLAM to compute distances from landmarks (Apriltags etc.) - Done
         //Translate to motor movements
     //
 

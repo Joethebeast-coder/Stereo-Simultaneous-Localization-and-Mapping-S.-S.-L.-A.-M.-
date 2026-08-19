@@ -3,14 +3,19 @@ import numpy as np
 import Calc_coords as cc
 from ultralytics import YOLO
 
+global field_width_m
+global field_length_m
+
+field_width_m = (316.64 * 2.54) / 100
+field_length_m = (650.12 * 2.54) / 100
 
 #AI Object Detection
 model = YOLO("yolo26n.pt")
 
-def collect_n_scan(left_img, right_img):
+def collect_n_scan(left_img, right_img, map_left_x, map_left_y, map_right_x, map_right_y):
     full_pack = [] #Full Packet to be returned
 
-    rectified_left, rectified_right = cc.rectify(left_img, right_img)
+    rectified_left, rectified_right = cc.rectify(left_img, right_img, map_left_x, map_left_y, map_right_x, map_right_y)
     results = model(rectified_left) #Temporary, use trained model if doesnt work
 
     for result in results:
@@ -42,8 +47,8 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
         d3_packet = []
 
         obj_class = packet[0]
-        center_x = packet[1]
-        center_y = packet[2]
+        center_x = int(packet[1])
+        center_y = int(packet[2])
 
         if valid[center_y, center_x]:
             obj_x, obj_y, obj_z = points_3d[center_y, center_x]
@@ -57,13 +62,6 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
     return obj_pos, points_3d, valid
 
 def robot_field_pos(horizontal_dist, tag_id, r_angle_tag):
-    global field_width_m
-    global field_length_m
-
-    field_width_m = (316.64 * 2.54) / 100
-    field_length_m = (650.12 * 2.54) / 100
-
-
 
     #Ex: Tag on the top-middle (Change math as per challenge's specific apriltag positions)
 
@@ -71,8 +69,9 @@ def robot_field_pos(horizontal_dist, tag_id, r_angle_tag):
         id_x = field_width_m / 2
         id_y = 0 #Top left - 0, 0, bottom right - (316.64 * 2.54) / 100, (650.12 * 2.54) / 100
 
-        rob_y_dist = np.sin(r_angle_tag * -1 if r_angle_tag < 0 else r_angle_tag) * horizontal_dist
-        rob_x_dist = np.cos(r_angle_tag * -1 if r_angle_tag < 0 else r_angle_tag) * horizontal_dist
+        rr_angle_tag = np.radians(r_angle_tag)
+        rob_y_dist = np.sin(rr_angle_tag * -1 if r_angle_tag < 0 else rr_angle_tag) * horizontal_dist
+        rob_x_dist = np.cos(rr_angle_tag * -1 if r_angle_tag < 0 else rr_angle_tag) * horizontal_dist
 
         rob_x = id_x - rob_x_dist if r_angle_tag < 0 else id_x + rob_x_dist
         rob_y = rob_y_dist
@@ -99,15 +98,18 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
             pts = corners[i][0]
 
-            top_left_x     = corners[0][0][0][0]
-            top_right_x    = corners[0][0][1][0]
-            bottom_right_x = corners[0][0][2][0]
-            bottom_left_x  = corners[0][0][3][0]
+            top_left_x     = int(pts[0][0])
+            top_left_y     = int(pts[0][1])
 
-            top_left_y     = corners[0][0][0][1]
-            top_right_y    = corners[0][0][1][1]
-            bottom_right_y = corners[0][0][2][1]
-            bottom_left_y  = corners[0][0][3][1]
+            top_right_x    = int(pts[1][0])
+            top_right_y    = int(pts[1][1])
+
+            bottom_right_x = int(pts[2][0])
+            bottom_right_y = int(pts[2][1])
+
+            bottom_left_x  = int(pts[3][0])
+            bottom_left_y  = int(pts[3][1])
+            
 
             if valid[top_left_y, top_left_x] and valid[top_right_y, top_right_x] and valid[bottom_left_y, bottom_left_x] and valid[bottom_right_y, bottom_right_x]:
                 tlx, tly, tlz = points_3d[top_left_y, top_left_x]
@@ -120,6 +122,9 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
                 normal = np.cross(hz, vz)
                 normal /= np.linalg.norm(normal)
+
+                if normal[2] < 0:
+                    normal = -normal
 
                 nx = normal[0]
                 ny = normal[1]
@@ -141,7 +146,7 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
                 horizontal_dist = np.sqrt(X**2 + Z**2)
 
-                tags.append(tag_id, horizontal_dist, robot_angle)
+                tags.append([tag_id, horizontal_dist, robot_angle])
 
         return tags
 
@@ -163,19 +168,17 @@ def dist_to_landmarks(rob_pos):
     dist_to_id_1_x = rob_x - id_1_x
     dist_to_id_1_y = rob_y - id_1_y
 
-    dist_to_id_1 = np.sqrt((dist_to_id_1_y * -1 if dist_to_id_1_y < 0 else dist_to_id_1_y) ** 2 + (dist_to_id_1_x * -1 if dist_to_id_1_x < 0 else dist_to_id_1_x) ** 2)
+    dist_to_id_1 = np.sqrt(dist_to_id_1_y  ** 2 + (dist_to_id_1_x ** 2))
 
     dist_to_id_2_x = rob_x - id_2_x
     dist_to_id_2_y = rob_y - id_2_y
 
-    dist_to_id_2 = np.sqrt((dist_to_id_2_y * -1 if dist_to_id_2_y < 0 else dist_to_id_2_y) ** 2 + (dist_to_id_2_x * -1 if dist_to_id_2_x < 0 else dist_to_id_2_x) ** 2)
+    dist_to_id_2 = np.sqrt(dist_to_id_2_y ** 2 + (dist_to_id_2_x ** 2))
 
     angle_id_1 = np.degrees(np.arcsin(dist_to_id_1_x / dist_to_id_1))
     angle_id_2 = np.degrees(np.arcsin(dist_to_id_2_y / dist_to_id_2))
 
     return [dist_to_id_1, dist_to_id_2, angle_id_1, angle_id_2]
-
-
 
 
 
