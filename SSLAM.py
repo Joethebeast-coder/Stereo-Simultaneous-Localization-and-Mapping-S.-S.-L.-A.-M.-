@@ -57,8 +57,12 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
     return obj_pos, points_3d, valid
 
 def robot_field_pos(horizontal_dist, tag_id, r_angle_tag):
+    global field_width_m
+    global field_length_m
+
     field_width_m = (316.64 * 2.54) / 100
     field_length_m = (650.12 * 2.54) / 100
+
 
 
     #Ex: Tag on the top-middle (Change math as per challenge's specific apriltag positions)
@@ -145,4 +149,33 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
     else:
         return [None]
+
+def dist_to_landmarks(rob_pos):
+    rob_x = rob_pos[0]
+    rob_y = rob_pos[1]
+
+    id_1_x = field_width_m / 2
+    id_1_y = 0
+
+    id_2_x = 0
+    id_2_y = field_length_m / 2
+
+    dist_to_id_1_x = rob_x - id_1_x
+    dist_to_id_1_y = rob_y - id_1_y
+
+    dist_to_id_1 = np.sqrt((dist_to_id_1_y * -1 if dist_to_id_1_y < 0 else dist_to_id_1_y) ** 2 + (dist_to_id_1_x * -1 if dist_to_id_1_x < 0 else dist_to_id_1_x) ** 2)
+
+    dist_to_id_2_x = rob_x - id_2_x
+    dist_to_id_2_y = rob_y - id_2_y
+
+    dist_to_id_2 = np.sqrt((dist_to_id_2_y * -1 if dist_to_id_2_y < 0 else dist_to_id_2_y) ** 2 + (dist_to_id_2_x * -1 if dist_to_id_2_x < 0 else dist_to_id_2_x) ** 2)
+
+    angle_id_1 = np.degrees(np.arcsin(dist_to_id_1_x / dist_to_id_1))
+    angle_id_2 = np.degrees(np.arcsin(dist_to_id_2_y / dist_to_id_2))
+
+    return [dist_to_id_1, dist_to_id_2, angle_id_1, angle_id_2]
+
+
+
+
 

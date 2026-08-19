@@ -128,7 +128,7 @@ void main() {
         float horizontal_dist = april_tags[0][1];
         float robot_angle_to_tag = april_tags[0][2];
 
-        py::list robot_pos = SSLAM.attr("robot_field_pos")(horizontal_dist, tag_id, robot_angle_to_tag)
+        py::list robot_pos = SSLAM.attr("robot_field_pos")(horizontal_dist, tag_id, robot_angle_to_tag);
 
     }
 
