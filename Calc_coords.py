@@ -129,6 +129,27 @@ def rectify(left_image, right_image, map_left_x, map_left_y, map_right_x, map_ri
 
     return rectified_left, rectified_right
 
+def save_calibration(filename, map_left_x, map_left_y, map_right_x, map_right_y, Q):
+    np.savez(
+        filename,
+        map_left_x=map_left_x,
+        map_left_y=map_left_y,
+        map_right_x=map_right_x,
+        map_right_y=map_right_y,
+        Q=Q
+    )
+
+def load_calibration(filename):
+    data = np.load(filename)
+
+    return (
+        data["map_left_x"],
+        data["map_left_y"],
+        data["map_right_x"],
+        data["map_right_y"],
+        data["Q"]
+    )
+
 def depth_disparity(rectified_left, rectified_right, Q):
     left_gray = cv2.cvtColor(
         rectified_left,

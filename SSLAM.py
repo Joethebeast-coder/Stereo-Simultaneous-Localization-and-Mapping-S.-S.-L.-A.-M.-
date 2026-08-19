@@ -1,8 +1,9 @@
 import cv2
 import numpy
 import Calc_coords as cc
-
+import sys
 from ultralytics import YOLO
+
 
 #AI Object Detection
 model = YOLO("yolo26n.pt")
