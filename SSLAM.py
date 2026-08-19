@@ -55,4 +55,4 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
 
             obj_pos.append(d3_packet)
 
-    return obj_pos
+    return obj_pos, points_3d

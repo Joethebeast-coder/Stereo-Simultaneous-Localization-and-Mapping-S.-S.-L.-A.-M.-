@@ -109,19 +109,15 @@ void main() {
     py::array rectified_right = scanned_img[1].cast<py::array>();
     py::list full_pack = scanned_img[2].cast<py::list>();
 
-    py::list obj_dist_plot = SSLAM.attr("compute_obj_dist")(
+    py::tuple obj_dist_plot = SSLAM.attr("compute_obj_dist")(
         rectified_left,
         rectified_right,
         full_pack,
         Q
     )
 
-
-
-    
-
-
-
+    py::list obj_dist = obj_dist_plot[0].cast<py::list>();
+    py::array points_3d = obj_dist_plot[1].cast<py::array>();
 
 }
 
