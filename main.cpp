@@ -3,6 +3,10 @@
 namespace py = pybind11
 PSSI_HandleTypeDef hpssi;
 
+float field_width_m = (316.64 * 2.54) / 100
+float field_length_m = (650.12 * 2.54) / 100
+
+
 void setupPSSI()
 {
     hpssi.Instance = PSSI;
@@ -123,9 +127,10 @@ void main() {
         int tag_id = april_tags[0][0];
         float horizontal_dist = april_tags[0][1];
         float robot_angle_to_tag = april_tags[0][2];
+
+        py::list robot_pos = SSLAM.attr("robot_field_pos")(horizontal_dist, tag_id, robot_angle_to_tag)
+
     }
-
-
 
     //Have it control motors
         //Defense Mode

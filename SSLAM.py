@@ -56,6 +56,26 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
 
     return obj_pos, points_3d, valid
 
+def robot_field_pos(horizontal_dist, tag_id, r_angle_tag):
+    field_width_m = (316.64 * 2.54) / 100
+    field_length_m = (650.12 * 2.54) / 100
+
+
+    #Ex: Tag on the top-middle (Change math as per challenge's specific apriltag positions)
+
+    if tag_id == 1: #Example
+        id_x = field_width_m / 2
+        id_y = 0 #Top left - 0, 0, bottom right - (316.64 * 2.54) / 100, (650.12 * 2.54) / 100
+
+        rob_y_dist = np.sin(r_angle_tag * -1 if r_angle_tag < 0 else r_angle_tag) * horizontal_dist
+        rob_x_dist = np.cos(r_angle_tag * -1 if r_angle_tag < 0 else r_angle_tag) * horizontal_dist
+
+        rob_x = id_x - rob_x_dist if r_angle_tag < 0 else id_x + rob_x_dist
+        rob_y = rob_y_dist
+
+        return [rob_x, rob_y]
+
+    
 def apriltag_pos(rectified_left, valid, points_3d):
 
     detector = cv2.aruco.ArucoDetector(
