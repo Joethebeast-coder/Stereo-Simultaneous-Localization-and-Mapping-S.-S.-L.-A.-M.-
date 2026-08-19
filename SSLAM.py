@@ -36,7 +36,7 @@ def collect_n_scan(left_img, right_img):
     return rectified_left, rectified_right, full_pack
 
 def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
-    disparity_map, points_3d, valid = cc.depth_disparity(rectified_left, rectified_right, Q):
+    disparity_map, points_3d, valid = cc.depth_disparity(rectified_left, rectified_right, Q)
     obj_pos = []
 
     for packet in full_pack:

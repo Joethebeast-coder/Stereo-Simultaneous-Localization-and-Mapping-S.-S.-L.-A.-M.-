@@ -23,7 +23,7 @@ void calibrate_cams(){
             right_image
         );
 
-    vision.attr("save_calibration")(
+    CC.attr("save_calibration")(
         "calibration.npz",
         map_left_x,
         map_left_y,
@@ -58,8 +58,11 @@ HAL_PSSI_Receive_DMA(
 );
 
 void main() {
+    py::module_ CC = py::module_::import("Calc_coords");
+    py::module_ SSLAM = py::module_::import("SSLAM");
+
     py::tuple calibration =
-        vision.attr("load_calibration")(
+        CC.attr("load_calibration")(
             "calibration.npz"
         );
 
@@ -71,13 +74,13 @@ void main() {
 
     py::scoped_interpreter guard{};
     
-    py::module_ CC = py::module_::import("Calc_coords");
-    py::module_ SSLAM = py::module_::import("SSLAM");
+    
     
     //Placeholder values
     int left_img = 0;
     int right_img = 1;
 
+    /*
     py::tuple rectified = CC.attr("rectify")(
         left_img,
         right_img,
@@ -86,6 +89,37 @@ void main() {
         map_right_x,
         map_right_y
     )
+
+    py::array rectified_left = rectified[0].cast<py::array>();
+    py::array rectified_right = rectified[1].cast<py::array>();
+
+    py::tuple disparity = CC.attr("depth_disparity")(
+        rectified_left,
+        rectified_right,
+        Q
+    )
+
+    py::array points_3d = disparity[1].cast<py::array>();
+    py::array valid = disparity[2].cast<py::array>();
+    */
+    
+    py::tuple scanned_img = SSLAM.attr("collect_n_scan")(left_img, right_img)
+    
+    py::array rectified_left = scanned_img[0].cast<py::array>();
+    py::array rectified_right = scanned_img[1].cast<py::array>();
+    py::list full_pack = scanned_img[2].cast<py::list>();
+
+    py::list obj_dist_plot = SSLAM.attr("compute_obj_dist")(
+        rectified_left,
+        rectified_right,
+        full_pack,
+        Q
+    )
+
+
+
+    
+
 
 
 
