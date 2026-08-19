@@ -150,10 +150,9 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
         return tags
 
-
-
     else:
         return [None]
+
 
 def dist_to_landmarks(rob_pos):
     rob_x = rob_pos[0]
@@ -181,4 +180,33 @@ def dist_to_landmarks(rob_pos):
     return [dist_to_id_1, dist_to_id_2, angle_id_1, angle_id_2]
 
 
+def obstacle_settings(): #Change and adjust based on new game
+    bot_radius = 0.705
+    goal_length = (47 * 2.54) / 100
+    goalr_center = [(182.11 * 2.54) / 100, field_width_m / 2]
+    goalb_center = [((182.11 * 2.54) + (143.5 * 2 * 2.54))/ 100, field_width_m / 2]
+    np.savez(
+        "obs_settings.npz",
+        bot_radius=bot_radius,
+        goal_length=goal_length,
+        goalr_center=goalr_center,
+        goalb_center=goalb_center
+    )
+
+
+def retrieve_obs_settings(): #Change and adjust based on new game
+    data = np.load("obs_settings.npz")
+
+    return [data["bot_radius"], data["goal_length"], data["goalr_center"], data["goalb_center"]]
+
+
+def determine_best_path(robot_pos, target_coords, all_obstacles):
+
+    robot_x = robot_pos[0]
+    robot_y = robot_pos[1]
+
+    target_x = target_coords[0]
+    target_y = target_coords[1]
+
+    
 
