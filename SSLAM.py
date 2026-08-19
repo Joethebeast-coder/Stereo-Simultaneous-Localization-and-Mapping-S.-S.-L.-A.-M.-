@@ -54,7 +54,7 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
 
             obj_pos.append(d3_packet)
 
-    return obj_pos, points_3d
+    return obj_pos, points_3d, valid
 
 def apriltag_pos(rectified_left, valid, points_3d):
 
@@ -75,6 +75,35 @@ def apriltag_pos(rectified_left, valid, points_3d):
 
             pts = corners[i][0]
 
+            top_left_x     = corners[0][0][0][0]
+            top_right_x    = corners[0][0][1][0]
+            bottom_right_x = corners[0][0][2][0]
+            bottom_left_x  = corners[0][0][3][0]
+
+            top_left_y     = corners[0][0][0][1]
+            top_right_y    = corners[0][0][1][1]
+            bottom_right_y = corners[0][0][2][1]
+            bottom_left_y  = corners[0][0][3][1]
+
+            if valid[top_left_y, top_left_x] and valid[top_right_y, top_right_x] and valid[bottom_left_y, bottom_left_x] and valid[bottom_right_y, bottom_right_x]:
+                tlx, tly, tlz = points_3d[top_left_y, top_left_x]
+                trx, tRy, trz = points_3d[top_right_y, top_right_x]
+                blx, bly, blz = points_3d[bottom_left_y, bottom_left_x]
+                brx, bry, brz = points_3d[bottom_right_y, bottom_right_x]
+
+                hz = np.array([trx - tlx, tRy - tly, trz - tlz])
+                vz = np.array([blx - tlx, bly - tly, blz - tlz])
+
+                normal = np.cross(hz, vz)
+                normal /= np.linalg.norm(normal)
+
+                nx = normal[0]
+                ny = normal[1]
+                nz = normal[2]
+
+                robot_angle = np.degrees(np.arctan2(nx, nz))
+                
+
             center_x = pts[:, 0].mean()
             center_y = pts[:, 1].mean()
 
@@ -86,11 +115,14 @@ def apriltag_pos(rectified_left, valid, points_3d):
             if valid[y, x]:
                 X, Y, Z = points_3d[y, x]
 
-            horizontal_dist = np.sqrt(X**2 + Z**2)
+                horizontal_dist = np.sqrt(X**2 + Z**2)
 
-            tags.append(tag_id, horizontal_dist)
+                tags.append(tag_id, horizontal_dist, robot_angle)
+
+        return tags
+
+
 
     else:
-        return (None)
-
+        return [None]
 

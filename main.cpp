@@ -32,20 +32,15 @@ void calibrate_cams(){
         Q
     );
 
-    py::array map_left_x =
-        calibration[0].cast<py::array>();
+    py::array map_left_x = calibration[0].cast<py::array>();
 
-    py::array map_left_y =
-        calibration[1].cast<py::array>();
+    py::array map_left_y = calibration[1].cast<py::array>();
 
-    py::array map_right_x =
-        calibration[2].cast<py::array>();
+    py::array map_right_x = calibration[2].cast<py::array>();
 
-    py::array map_right_y =
-        calibration[3].cast<py::array>();
+    py::array map_right_y = calibration[3].cast<py::array>();
 
-    py::array Q =
-        calibration[4].cast<py::array>();
+    py::array Q = calibration[4].cast<py::array>();
     
 }
 
@@ -103,7 +98,7 @@ void main() {
     py::array valid = disparity[2].cast<py::array>();
     */
     
-    py::tuple scanned_img = SSLAM.attr("collect_n_scan")(left_img, right_img)
+    py::tuple scanned_img = SSLAM.attr("collect_n_scan")(left_img, right_img);
     
     py::array rectified_left = scanned_img[0].cast<py::array>();
     py::array rectified_right = scanned_img[1].cast<py::array>();
@@ -118,6 +113,19 @@ void main() {
 
     py::list obj_dist = obj_dist_plot[0].cast<py::list>();
     py::array points_3d = obj_dist_plot[1].cast<py::array>();
+    py::array valid = obj_dist_plot[2].cast<py::array>();
+
+    py::list april_tags = SSLAM.attr("apriltag_pos")(rectified_left, rectified_right, Q);
+
+    if (april_tags[0].is_none()) {
+        continue;
+    } elif (april_tags.size() < 2) {
+        int tag_id = april_tags[0][0];
+        float horizontal_dist = april_tags[0][1];
+        float robot_angle_to_tag = april_tags[0][2];
+    }
+
+
 
     //Have it control motors
         //Defense Mode
