@@ -1,7 +1,6 @@
 import cv2
-import numpy
+import numpy as np
 import Calc_coords as cc
-import sys
 from ultralytics import YOLO
 
 
@@ -56,3 +55,42 @@ def compute_obj_dist(rectified_left, rectified_right, full_pack, Q):
             obj_pos.append(d3_packet)
 
     return obj_pos, points_3d
+
+def apriltag_pos(rectified_left, valid, points_3d):
+
+    detector = cv2.aruco.ArucoDetector(
+        cv2.aruco.getPredefinedDictionary(
+            cv2.aruco.DICT_APRILTAG_36h11
+        )
+    )
+
+    corners, ids, rejected = detector.detectMarkers(rectified_left)
+
+    if ids is not None:
+        tags = []
+
+        for i, tag_id in enumerate(ids.flatten()):
+            print("Tag ID:", tag_id)
+            print("Corners:", corners[i])
+
+            pts = corners[i][0]
+
+            center_x = pts[:, 0].mean()
+            center_y = pts[:, 1].mean()
+
+            print(center_x, center_y)
+
+            x = int(center_x)
+            y = int(center_y)
+
+            if valid[y, x]:
+                X, Y, Z = points_3d[y, x]
+
+            horizontal_dist = np.sqrt(X**2 + Z**2)
+
+            tags.append(tag_id, horizontal_dist)
+
+    else:
+        return (None)
+
+

@@ -119,5 +119,13 @@ void main() {
     py::list obj_dist = obj_dist_plot[0].cast<py::list>();
     py::array points_3d = obj_dist_plot[1].cast<py::array>();
 
+    //Have it control motors
+        //Defense Mode
+        //Use Custom Swerve Drive Lib
+        //Use SSLAM to compute distances from landmarks (Apriltags etc.)
+        //Translate to motor movements
+    //
+
 }
+
 
