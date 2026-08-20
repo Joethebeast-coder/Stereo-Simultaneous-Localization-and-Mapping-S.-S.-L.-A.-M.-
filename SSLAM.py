@@ -292,13 +292,108 @@ def determine_best_path(robot_pos, target_coords, all_obstacles):
                 x_collision = robot_x + t_collision * dx
                 y_collision = robot_y + t_collision * dy
 
+                safety_margin = 0.4
 
+                L_safe = L_collision - safety_margin
+                t_safe = L_safe / np.sqrt(dx ** 2 + dy ** 2)
+
+                clean_x = robot_x + t_safe * dx
+                clean_y = robot_y + t_safe * dy
+
+                clean_point = [clean_x, clean_y]
+
+                #Find arc
+                theta_s = np.atan2(clean_y - obs_y, clean_x - obs_x)
+                theta_t = np.atan2(target_y - obs_y, target_x - obs_x)
+
+                delta_theta_ccw = (theta_t - theta_s) % (2 * np.pi)
+                delta_theta_cw = (theta_s - theta_t) % (2 * np.pi)
+
+                arc_length_ccw = arc_radius * delta_theta_ccw
+                arc_length_cw = arc_radius * delta_theta_cw
+
+                arc_radius = obs_radius + bot_radius + safety_margin
+
+                for o_obstacle in obstacles:
+                    o_obstacle_name = o_obstacle[0]
+
+                    if o_obstacle_name == obstacle_name:
+                        continue
+                    else:
+
+                        o_obstacle_type = o_obstacle[1]
+
+                        if o_obstacle_type == "Circle":
+                            o_obs_rad = o_obstacle[2]
+                            o_obs_center = o_obstacle[3]
+
+                            o_obs_x = o_obs_center[0]
+                            o_obs_y = o_obs_center[1]
+
+                            d = np.sqrt((o_obs_x - obs_x) ** 2 + (o_obs_y - obs_y) ** 2)
+
+                            r_other = o_obs_rad + bot_radius
+
+                            if abs(d - arc_radius) <= r_other:
+                                theta_o = np.atan2(o_obs_y - obs_y, o_obs_x - obs_x)
+                                alpha = np.arcsin(r_other / d)
+
+                                theta_o_min = (theta_o - alpha) % (2 * np.pi)
+                                theta_o_max = (theta_o + alpha) % (2 * np.pi)
+
+                                theta_fsmin = (theta_o_min - theta_s) % (2 * np.pi)
+                                theta_fsmax = (theta_o_max - theta_s) % (2 * np.pi)
+                                N = 100
+
+                                ccw_blocked = False
+                                for i in range(0, N + 1):
+                                    theta = theta_s + (i / N) * delta_theta_ccw
+
+                                    arc_x = obs_x + arc_radius * np.cos(theta)
+                                    arc_y = obs_y + arc_radius * np.sin(theta)
+
+                                    dist_to_obs = np.sqrt((arc_x - o_obs_x) ** 2 + (arc_y - o_obs_y) ** 2)
+
+                                    if dist_to_obs <= r_other:
+                                        ccw_blocked  = True
+                                        break
+
+                                cw_blocked = False
+                                for i in range(0, N + 1):
+                                    theta = theta_s - (i / N) * delta_theta_cw
+
+                                    arc_x = obs_x + arc_radius * np.cos(theta)
+                                    arc_y = obs_y + arc_radius * np.sin(theta)
+
+                                    dist_to_obs = np.sqrt((arc_x - o_obs_x) ** 2 + (arc_y - o_obs_y) ** 2)
+
+                                    if dist_to_obs <= r_other:
+                                        cw_blocked = True
+                                        break
+
+                                if ccw_blocked and not cw_blocked:
+                                    #Code for cw arc
+                                    pass
+                                elif not ccw_blocked and cw_blocked:
+                                    #Code for ccw arc
+                                    pass
+                                elif not ccw_blocked and not cw_blocked:
+                                    if arc_length_cw >= arc_length_ccw:
+                                        #Code for cw
+                                        pass
+                                    else:
+                                        #Code for ccw
+                                        pass
+                                else:
+                                    return None #No arc path
+
+                                    
     if not direct_path_blocked:
         m = (target_y - robot_y) / (target_x - robot_x)
         b = robot_y - m * robot_x
 
         equation_vars = [m, b]
-        angle_heading = np.atan2(target_y - robot_y, target_x - robot_x)
+        angle_heading = np.degrees(np.atan2(target_y - robot_y, target_x - robot_x))
         package = [equation_vars, angle_heading]
 
         return package
