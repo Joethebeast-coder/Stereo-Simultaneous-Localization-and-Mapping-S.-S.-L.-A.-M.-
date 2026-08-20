@@ -180,24 +180,52 @@ def dist_to_landmarks(rob_pos):
     return [dist_to_id_1, dist_to_id_2, angle_id_1, angle_id_2]
 
 
-def obstacle_settings(): #Change and adjust based on new game
+def obstacle_settings():
+    obstacles = []
+
     bot_radius = 0.705
-    goal_length = (47 * 2.54) / 100
-    goalr_center = [(182.11 * 2.54) / 100, field_width_m / 2]
-    goalb_center = [((182.11 * 2.54) + (143.5 * 2 * 2.54))/ 100, field_width_m / 2]
+
+    goal_length = (49 * 2.54) / 100
+
+    goalr_center = [
+        (182.11 * 2.54) / 100,
+        field_width_m / 2
+    ]
+
+    goalb_center = [
+        ((182.11 * 2.54) + (143.5 * 2 * 2.54)) / 100,
+        field_width_m / 2
+    ]
+
+    # Each goal is its own obstacle
+    red_goal = [
+        "Red Goal",
+        "Circle",
+        goal_length,
+        goalr_center
+    ]
+
+    blue_goal = [
+        "Blue Goal",
+        "Circle",
+        goal_length,
+        goalb_center
+    ]
+
+    obstacles.append(red_goal)
+    obstacles.append(blue_goal)
+
     np.savez(
         "obs_settings.npz",
         bot_radius=bot_radius,
-        goal_length=goal_length,
-        goalr_center=goalr_center,
-        goalb_center=goalb_center
+        obstacles=obstacles
     )
 
 
 def retrieve_obs_settings(): #Change and adjust based on new game
     data = np.load("obs_settings.npz")
 
-    return [data["bot_radius"], data["goal_length"], data["goalr_center"], data["goalb_center"]]
+    return [data["bot_radius"], data["obstacles"]]
 
 
 def determine_best_path(robot_pos, target_coords, all_obstacles):
@@ -208,5 +236,70 @@ def determine_best_path(robot_pos, target_coords, all_obstacles):
     target_x = target_coords[0]
     target_y = target_coords[1]
 
-    
+    bot_radius = all_obstacles[0]
+    obstacles = all_obstacles[1]
+
+    dx = target_x - robot_x
+    dy = target_y - robot_y
+
+    path_length_squared = dx**2 + dy**2
+
+    if path_length_squared == 0:
+        return [robot_pos, target_coords]
+
+    direct_path_blocked = False
+
+    for obstacle in obstacles:
+
+        obstacle_name = obstacle[0]
+        obs_type = obstacle[1]
+
+        if obs_type == "Circle":
+
+            obs_radius = obstacle[2]
+            obs_center = obstacle[3]
+
+            obs_x = obs_center[0]
+            obs_y = obs_center[1]
+
+            buffered_rad = obs_radius + bot_radius
+
+            t = ((obs_x - robot_x) * dx + (obs_y - robot_y) * dy) / path_length_squared
+
+            t = max(0, min(1, t))
+
+            closest_x = robot_x + t * dx
+            closest_y = robot_y + t * dy
+
+            
+
+            dist_x = obs_x - closest_x
+            dist_y = obs_y - closest_y
+
+            dist_sqrd = (dist_x ** 2 + dist_y ** 2)
+
+            if dist_sqrd <= buffered_rad ** 2:
+                direct_path_blocked = True
+                
+                print(f"Path blocked by {obstacle_name}")
+
+                dc = np.sqrt((obs_x - closest_x) ** 2 + (obs_y - closest_y) ** 2)
+                h = np.sqrt(buffered_rad ** 2 - dc ** 2)
+                Lc = t * np.sqrt(dx ** 2 + dy ** 2)
+                L_collision = Lc - h
+                t_collision = L_collision / np.sqrt(dx ** 2 + dy ** 2)
+
+                x_collision = robot_x + t_collision * dx
+                y_collision = robot_y + t_collision * dy
+
+
+    if not direct_path_blocked:
+        m = (target_y - robot_y) / (target_x - robot_x)
+        b = robot_y - m * robot_x
+
+        equation_vars = [m, b]
+        angle_heading = np.atan2(target_y - robot_y, target_x - robot_x)
+        package = [equation_vars, angle_heading]
+
+        return package
 
