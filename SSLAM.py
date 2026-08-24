@@ -453,7 +453,7 @@ def determine_best_path(robot_pos, target_coords, all_obstacles):
                         equation_vars = [m, b]
 
 
-                        package = [clean_point, arc_equation, arc_end, equation_vars, final_point, final_heading]
+                        package = [clean_point, arc_equation, arc_end, equation_vars, final_point, final_heading, robot_pos]
 
                         return package
                 else:
@@ -469,3 +469,28 @@ def determine_best_path(robot_pos, target_coords, all_obstacles):
         package = [equation_vars, angle_heading]
 
         return package
+
+
+def angle_converter(package, v=10):
+    if len(package) > 2:
+        clean_point = package[0]
+        arc_eqat = package[1]
+        arc_end = package[2]
+        lin_eq = package[3]
+        fin_point = package[4]
+        final_heading = package[5]
+        robot_pos = package[6]
+
+        clean_x = clean_point[0]
+        clean_y = clean_point[1]
+        robot_x = robot_pos[0]
+        robot_y = robot_pos[1]
+
+        m1 = (clean_y - robot_y) / (clean_x - robot_x)
+        b1 = robot_y - m1 * robot_x
+
+        theta_1 = np.degrees(np.atan2(clean_y - robot_y, clean_x - robot_x))
+        V_x = v * np.cos(theta_1)
+        V_y = v * np.sin(theta_1)
+
+        
